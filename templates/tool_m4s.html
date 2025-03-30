@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>M4S转MP3 - 猫猫的工具箱</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* 仅添加背景层 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("{{ url_for('static', filename='images/tool1-bg.png') }}") no-repeat center center;
+            background-size: cover;
+            opacity: 0.7;
+            z-index: -1;
+        }
+
+        /* 工具容器样式（居中显示） */
+        .tool-container {
+            max-width: 1200px; /* 最大宽度 */
+            margin: 2rem auto; /* 上下外边距为2rem，左右外边距自动居中 */
+            padding: 0 20px; /* 左右内边距为20px */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 水平居中 */
+            gap: 40px; /* 子元素间距 */
+        }
+
+        .tool-content {
+            background:rgba(255, 255, 255, 0.9); /* 白色背景，透明度为0.9 */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 400px; /* 固定宽度 */
+        }
+
+        /* 覆盖标题背景透明度 */
+        .main-header {
+            background-color: rgba(119, 221, 119, 0.9); /* 绿色背景，透明度为0.9 */
+        }
+
+        /* 返回链接居左 */
+        .main-header h1 {
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        /* 原有表单样式 */
+        #uploadForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        input[type="file"] {
+            padding: 15px;
+            border: 2px dashed #77DD77;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+        button[type="submit"] {
+            background: #77DD77;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        button[type="submit"]:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <h1><a href="/" style="color: white; text-decoration: none;">← 猫猫的工具箱</a></h1>
+    </header>
+
+    <div class="tool-container">
+        <div class="tool-content">
+            <h2 style="color: #77DD77; text-align: center; margin-top: 0;">M4S转MP3转换器</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".m4s" required>
+                <button type="submit">开始转换</button>
+            </form>
+            <div id="message" style="text-align: center; margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = '转换中，请稍候...';
+            messageDiv.style.color = '#77DD77';
+
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'converted.mp3';
+                a.click();
+                messageDiv.textContent = '转换成功！文件已自动下载';
+            } catch (error) {
+                messageDiv.textContent = `错误：${error.message}`;
+                messageDiv.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>

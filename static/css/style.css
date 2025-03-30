@@ -1,0 +1,67 @@
+/* 保持原有CSS完全不变 */
+/* 基础样式 */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.main-header {
+    text-align: center;
+    padding: 2rem;
+    background-color: #77DD77;
+    color: white;
+}
+
+/* 工具卡片布局 */
+.tool-list {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.tool-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-decoration: none;
+    color: #333;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-left: 5px solid var(--theme-color, #77DD77);
+}
+
+/* 其他原有样式保持不变... */
+.tool-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.coming-soon {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.tool-content h2 {
+    margin: 0 0 10px 0;
+    color: var(--theme-color, #77DD77);
+}
+
+/* 聊天页特有样式 */
+.chat-container {
+    max-width: 1000px;
+    margin: 1.5rem auto;
+}
+.chat-header {
+    height: 60px;
+    background: rgba(119, 221, 119, 0.85);
+}
+.avatar-frame {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 15px;
+}

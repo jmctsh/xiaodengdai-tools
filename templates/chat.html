@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>猫猫的工具箱</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* 背景设置 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("{{ url_for('static', filename='images/tool2-bg.png') }}") no-repeat center center;
+            background-size: cover;
+            opacity: 0.7;
+            z-index: -1;
+        }
+
+        /* 标题容器 */
+        .main-header {
+            height: 60px;
+            background: rgba(119, 221, 119, 0.9);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+        }
+        .main-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .back-link {
+            color: white !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        /* 聊天容器 */
+        .chat-container {
+            max-width: 800px;
+            margin: 20px auto;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 聊天窗口标题 */
+        .chat-title {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 20px;
+            border-radius: 10px 10px 0 0;
+            font-size: 18px;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* 消息窗口 */
+        .chat-window {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 0 0 10px 10px;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 通用消息样式 */
+        .message {
+            margin: 15px 0;
+            max-width: 75%;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        /* 机器人消息（左侧对齐） */
+        .bot-message {
+            align-self: flex-start;
+        }
+
+        /* 用户消息（右侧对齐） */
+        .user-message {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        /* 头像样式 */
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 10px;
+        }
+
+        /* 消息内容样式 */
+        .message-content {
+            padding: 12px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        /* 机器人消息内容 */
+        .bot-message .message-content {
+            background: #7799CC;
+            color: white;
+        }
+
+        /* 用户消息内容 */
+        .user-message .message-content {
+            background: #77DD77;
+            color: white;
+        }
+
+        /* 消息头部（名字） */
+        .message-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* 输入区域 */
+        .input-box {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        #messageInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #77DD77;
+            border-radius: 25px;
+            font-size: 16px;
+        }
+        #sendButton {
+            background: #77DD77;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        #sendButton:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <!-- 标题栏 -->
+    <header class="main-header">
+        <h1><a href="/" class="back-link">← 猫猫的工具箱</a></h1>
+    </header>
+
+    <div class="chat-container">
+        <!-- 聊天窗口标题 -->
+        <div class="chat-title">和客服小祥聊天</div>
+
+        <div class="chat-window" id="chatWindow">
+            <!-- 初始消息 -->
+            <div class="message bot-message">
+                <img src="{{ url_for('static', filename='images/customer-service.png') }}" 
+                     class="avatar" 
+                     alt="小祥头像">
+                <div class="message-content">
+                    <div class="message-header">小祥</div>
+                    <div>主人，请把你剩余的人生交给我喵！</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-box">
+            <input type="text" 
+                   id="messageInput" 
+                   placeholder="输入消息，按Enter发送">
+            <button id="sendButton">发送</button>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chatWindow');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // 添加消息
+        function addMessage(message, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            if (isUser) {
+                contentDiv.textContent = message;
+                messageDiv.appendChild(contentDiv);
+            } else {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'message-header';
+                headerDiv.textContent = '小祥';
+                contentDiv.appendChild(headerDiv);
+                const textDiv = document.createElement('div');
+                textDiv.textContent = message;
+                contentDiv.appendChild(textDiv);
+                const avatarImg = document.createElement('img');
+                avatarImg.src = '/static/images/customer-service.png';
+                avatarImg.className = 'avatar';
+                avatarImg.alt = '小祥头像';
+                messageDiv.appendChild(avatarImg);
+                messageDiv.appendChild(contentDiv);
+            }
+
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            messageInput.value = '';
+
+            try {
+                const response = await fetch('/chat/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                if(data.status === 'success') {
+                    addMessage(data.response, false);
+                } else {
+                    addMessage('服务暂时不可用，请稍后再试', false);
+                }
+            } catch (error) {
+                addMessage('网络连接异常', false);
+            }
+        }
+
+        // 事件监听
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>音频分离器 - 猫猫的工具箱</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* 仅添加背景层 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("{{ url_for('static', filename='images/tool3-bg.png') }}") no-repeat center center;
+            background-size: cover;
+            opacity: 0.7;
+            z-index: -1;
+        }
+
+        /* 工具容器样式（居中显示） */
+        .tool-container {
+            max-width: 1200px; /* 最大宽度 */
+            margin: 2rem auto; /* 上下外边距为2rem，左右外边距自动居中 */
+            padding: 0 20px; /* 左右内边距为20px */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 水平居中 */
+            gap: 40px; /* 子元素间距 */
+        }
+
+        .tool-content {
+            background:rgba(255, 255, 255, 0.9); /* 白色背景，透明度为0.9 */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 500px; /* 固定宽度 */
+        }
+
+        /* 覆盖标题背景透明度 */
+        .main-header {
+            background-color: rgba(119, 221, 119, 0.9); /* 绿色背景，透明度为0.9 */
+        }
+
+        /* 返回链接居左 */
+        .main-header h1 {
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        /* 表单样式 */
+        #uploadForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .file-upload-area {
+            padding: 20px;
+            border: 2px dashed #77DD77;
+            border-radius: 8px;
+            width: 90%;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .file-upload-area:hover {
+            background-color: rgba(119, 221, 119, 0.1);
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        button[type="submit"] {
+            background: #77DD77;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        button[type="submit"]:hover {
+            opacity: 0.9;
+        }
+        
+        .progress-container {
+            width: 100%;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #77DD77;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .download-links {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .download-button {
+            background: #7799CC;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            text-align: center;
+            transition: opacity 0.3s;
+        }
+        
+        .download-button:hover {
+            opacity: 0.9;
+        }
+        
+        #selectedFileName {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <h1><a href="/" style="color: white; text-decoration: none;">← 猫猫的工具箱</a></h1>
+    </header>
+
+    <div class="tool-container">
+        <div class="tool-content">
+            <h2 style="color: #77DD77; text-align: center; margin-top: 0;">音频分离器</h2>
+            <p style="text-align: center; margin-bottom: 20px;">使用AI技术将歌曲分离为人声和伴奏轨道</p>
+            
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="file-upload-area" id="dropArea">
+                    <p>点击或拖放音频文件到这里</p>
+                    <p>(支持 .mp3, .wav, .flac, .ogg 格式)</p>
+                    <div id="selectedFileName"></div>
+                </div>
+                <input type="file" name="file" id="fileInput" accept=".mp3,.wav,.flac,.ogg" required>
+                <button type="submit" id="submitButton">开始分离</button>
+            </form>
+            
+            <div class="progress-container" id="progressContainer">
+                <p id="progressText">处理中，请稍候...</p>
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+            </div>
+            
+            <div class="download-links" id="downloadLinks" style="display: none;">
+                <!-- 下载链接将在处理完成后动态添加 -->
+            </div>
+            
+            <div id="message" style="text-align: center; margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const uploadForm = document.getElementById('uploadForm');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const downloadLinks = document.getElementById('downloadLinks');
+        const messageDiv = document.getElementById('message');
+        const submitButton = document.getElementById('submitButton');
+        
+        // 点击上传区域触发文件选择
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // 显示选择的文件名
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                selectedFileName.textContent = `已选择: ${fileInput.files[0].name}`;
+            } else {
+                selectedFileName.textContent = '';
+            }
+        });
+        
+        // 拖放功能
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.style.backgroundColor = 'rgba(119, 221, 119, 0.2)';
+            dropArea.style.borderColor = '#77DD77';
+        }
+        
+        function unhighlight() {
+            dropArea.style.backgroundColor = '';
+            dropArea.style.borderColor = '#77DD77';
+        }
+        
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            
+            if (files.length > 0) {
+                selectedFileName.textContent = `已选择: ${files[0].name}`;
+            }
+        }
+        
+        // 表单提交处理
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!fileInput.files.length) {
+                messageDiv.textContent = '请选择一个音频文件';
+                messageDiv.style.color = 'red';
+                return;
+            }
+            
+            const formData = new FormData(uploadForm);
+            
+            // 显示进度条
+            progressContainer.style.display = 'block';
+            downloadLinks.style.display = 'none';
+            messageDiv.textContent = '';
+            submitButton.disabled = true;
+            
+            try {
+                // 模拟进度更新
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    if (progress < 90) {
+                        progress += 2;
+                        progressBar.style.width = `${progress}%`;
+                        progressText.textContent = `AI处理中，请稍候... ${progress}%`;
+                    }
+                }, 2000);
+                
+                const response = await fetch('/separate-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '处理失败');
+                }
+                
+                const result = await response.json();
+                
+                // 完成进度条
+                progressBar.style.width = '100%';
+                progressText.textContent = '处理完成！';
+                
+                // 显示下载链接
+                downloadLinks.innerHTML = '';
+                downloadLinks.style.display = 'flex';
+                
+                const tracks = [
+                    { name: '人声', file: result.vocals },
+                    { name: '伴奏', file: result.instrumental }
+                ];
+                
+                tracks.forEach(track => {
+                    const link = document.createElement('a');
+                    link.href = track.file;
+                    link.className = 'download-button';
+                    link.textContent = `下载${track.name}轨道`;
+                    link.download = track.file.split('/').pop();
+                    downloadLinks.appendChild(link);
+                });
+                
+                messageDiv.textContent = '分离成功！请点击上方按钮下载各个轨道';
+                messageDiv.style.color = '#77DD77';
+                
+            } catch (error) {
+                progressContainer.style.display = 'none';
+                messageDiv.textContent = `错误：${error.message}`;
+                messageDiv.style.color = 'red';
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
