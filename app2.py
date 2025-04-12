@@ -6,7 +6,7 @@ chat_bp = Blueprint('chat', __name__, template_folder='templates')
 
 # 配置DeepSeek API的OpenAI客户端
 client = OpenAI(
-    api_key="sk-4c782ff55fcd41beb558f1da4b2cb87c",  # 您的DeepSeek API密钥
+    api_key="",  # 您的DeepSeek API密钥
     base_url="https://api.deepseek.com"  # DeepSeek API的基础URL
 )
 
